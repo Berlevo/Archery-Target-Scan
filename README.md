@@ -1,5 +1,5 @@
 # Archery Target Scan
-Archery Target Scan is a python code which returns the point number on the target. Our target has 5 circles.
+Archery Target Scan is a python code which returns the point on the target. Our target has 5 circles.
 
 ## Scanning
 In scanning part i have used hough circle transform and template matching.
