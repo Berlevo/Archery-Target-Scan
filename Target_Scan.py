@@ -3,7 +3,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 import math
 
-img = cv.imread("C:\\Users\\v-count\\Desktop\\target1.jpg",0)
+targetName = "C:\\Users\\v-count\\Desktop\\target1.jpg"
+img = cv.imread(targetName,0)
 template = cv.imread("C:\\Users\\v-count\\Desktop\\targetss.jpg",0)
 
 All_circle_radius = []
@@ -18,6 +19,7 @@ updated_Circle_radius_points = []
 cropImg = ""
 try_templateMatching = True
 done = True
+isTemplate = 0
 
 def hough_Transform(imgName):
     #Assign new image as cropted image
@@ -265,7 +267,7 @@ def Search_Circle():
 Search_Circle()
 
 if try_templateMatching == True:
-
+    isTemplate = 1
     All_circle_radius.clear()
     Selected_circle_radius.clear()
     Removed_Circle_radius_points.clear()
@@ -277,7 +279,7 @@ if try_templateMatching == True:
     updated_Circle_radius_points.clear()
 
     for try_templateMatching_count in range(1, 10):
-        img = cv.imread("C:\\Users\\v-count\\Desktop\\target1.jpg",0)
+        img = cv.imread(targetName,0)
         template_Matching(template, img, try_templateMatching_count)
         try:
             hough_Transform(img)
@@ -320,15 +322,27 @@ for i in range(len(center_points)):
 print(max_center_points_x)
 print(max_center_points_y)
 print(max_radius)
-# # rectX = math.factorial(max_center_points_x - max_radius)
-# # rectY = math.factorial(max_center_points_y - max_radius)
-# # print(rectX)
-# # print(rectY)
-# # img = cv.imread("C:\\Users\\v-count\\Desktop\\target2.jpg",0)
-# croptedImg = img[rectY:(rectY+2*max_radius), rectX:(rectX+2*max_radius)]
+
+rectX = max_center_points_x + 10 - max_radius
+rectY = max_center_points_y - max_radius
+
+print(rectX)
+print(rectY)
+
+if isTemplate == 0:
+    img = cv.imread(targetName,0)
+    croptedImg = img[rectY:(rectY+2*max_radius), rectX:(rectX+2*max_radius)]
+
+    plt.imshow(croptedImg,cmap = 'gray')
+    plt.show()
+else:
+    croptedImg = cropImg[rectY:(rectY+2*max_radius), rectX:(rectX+2*max_radius)]
+
+    plt.imshow(croptedImg,cmap = 'gray')
+    plt.show()
 
 #Threshold
-ret,thresh1 = cv.threshold(cropImg,30,255,cv.THRESH_BINARY)
+ret,thresh1 = cv.threshold(croptedImg,30,255,cv.THRESH_BINARY)
 plt.imshow(thresh1,cmap = 'gray')
 plt.show()
 
