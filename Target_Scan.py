@@ -3,7 +3,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import math
 
-targetName = "C:\\Users\\v-count\\Desktop\\target1.jpg"
+targetName = "C:\\Users\\v-count\\Desktop\\target2.jpg"
 img = cv.imread(targetName,0)
 template = cv.imread("C:\\Users\\v-count\\Desktop\\targetss.jpg",0)
 
@@ -20,6 +20,7 @@ cropImg = ""
 try_templateMatching = True
 done = True
 isTemplate = 0
+Scored_Points = []
 
 def hough_Transform(imgName):
     #Assign new image as cropted image
@@ -138,6 +139,7 @@ def template_Matching(TemplateImg, TargetImg, Counter):
             rectX = midx - radius
             rectY = midy - radius
             cropImg = target_scaled[rectY:(rectY+2*radius), rectX:(rectX+2*radius)]
+
             plt.imshow(cropImg,cmap = 'gray')
             plt.show()
 
@@ -331,12 +333,26 @@ print(rectY)
 
 if isTemplate == 0:
     img = cv.imread(targetName,0)
+    imgW, imgH = img.shape
+
     croptedImg = img[rectY:(rectY+2*max_radius), rectX:(rectX+2*max_radius)]
+    cropW, cropH = croptedImg.shape
+
+    farkW = abs(imgW - cropW)
+    farkH = abs(imgH - cropH)
+    print("farkw", farkW)
+    print("farkH", farkH)
 
     plt.imshow(croptedImg,cmap = 'gray')
     plt.show()
 else:
+    templateW, templateH = cropImg.shape
+
     croptedImg = cropImg[rectY:(rectY+2*max_radius), rectX:(rectX+2*max_radius)]
+    cropW, cropH = croptedImg.shape
+
+    farkW = abs(templateW - cropW)
+    farkH = abs(templateH - cropH)
 
     plt.imshow(croptedImg,cmap = 'gray')
     plt.show()
@@ -376,4 +392,64 @@ plt.show()
 #Locations of points
 num_of_points = len(keypoints)
 for count in range(num_of_points):
+    Scored_Points.append(int(keypoints[count].pt[0]))
+    Scored_Points.append(int(keypoints[count].pt[1]))
     print(keypoints[count].pt)
+
+
+print(Scored_Points)
+
+min_radius = Selected_circle_radius[0]
+counteris = 0
+for i in range(1, len(Selected_circle_radius)):
+    if Selected_circle_radius[i] < min_radius:
+        min_radius = Selected_circle_radius[i]
+        counteris = i
+
+min_center_points_x = 0
+min_center_points_y = 0
+for i in range(len(center_points)):
+    if int(i/2) == counteris:
+        min_center_points_x = center_points[i-1]
+        min_center_points_y = center_points[i]
+
+print(min_center_points_x)
+print(min_center_points_y)
+
+Selected_circle_radius.sort()
+print(Selected_circle_radius)
+
+for i in range(2, len(Scored_Points), 2):
+
+    point_radius_x = abs(min_center_points_x - (Scored_Points[i] + farkH))
+    point_radius_y = abs(min_center_points_y - (Scored_Points[i + 1] + farkW))
+
+    point_radius = math.sqrt(point_radius_x**2 + point_radius_y**2)
+
+    print(point_radius)
+
+    if point_radius <= Selected_circle_radius[0]:
+        cv.putText(img = croptedImg, text="10", org=(Scored_Points[i], Scored_Points[i + 1]), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=1, color=(255, 0, 0),thickness=1)
+        cv.imshow("10 Score",croptedImg)
+        cv.waitKey(0)
+        plt.show()
+    elif point_radius >= Selected_circle_radius[0] and point_radius <= Selected_circle_radius[1]:
+        cv.putText(img = croptedImg, text="9", org=(Scored_Points[i], Scored_Points[i + 1]), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=1, color=(255, 0, 0),thickness=1)
+        cv.imshow("9 Score",croptedImg)
+        cv.waitKey(0)
+        plt.show()
+    elif point_radius >= Selected_circle_radius[1] and point_radius <= Selected_circle_radius[2]:
+        cv.putText(img = croptedImg, text="8", org=(Scored_Points[i], Scored_Points[i + 1]), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=1, color=(255, 0, 0),thickness=1)
+        cv.imshow("8 Score",croptedImg)
+        cv.waitKey(0)
+        plt.show()
+    elif point_radius >= Selected_circle_radius[2] and point_radius <= Selected_circle_radius[3]:
+        cv.putText(img = croptedImg, text="7", org=(Scored_Points[i], Scored_Points[i + 1]), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=1, color=(255, 0, 0),thickness=1)
+        cv.imshow("7 Score",croptedImg)
+        cv.waitKey(0)
+        plt.show()
+    elif point_radius >= Selected_circle_radius[3] and point_radius < Selected_circle_radius[4]:
+        cv.putText(img = croptedImg, text="6", org=(Scored_Points[i], Scored_Points[i + 1]), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=1, color=(255, 0, 0),thickness=1)
+        cv.imshow("6 Score",croptedImg)
+        cv.waitKey(0)
+        plt.show()
