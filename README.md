@@ -2,7 +2,7 @@
 Archery Target Scan is a python code which returns the point on the target. Our target has 5 circles.
 
 ## Scanning
-In scanning part i have used hough circle transform and template matching.
+In target scanning part i have used hough circle transform and template matching to find the 5 circles on image. I have used blop detection to find the black dots on the target.
 
 Example Target Image:
 
@@ -29,6 +29,21 @@ Template Matching Result On Target Image:
 Hough Circle Transform After Template Matching:
 
 ![Hough_circle](https://user-images.githubusercontent.com/42059887/206727462-b8f9da28-aa1b-454d-9014-f9d25493d14d.png)
+
+### Blop Detection
+In blop detection i have used simple thresholding to find the black dots on the target. I have set the minimum pixel for thresholding to 30 and maximum pixel for thresholding to 255. For thresholding method i have used THRESH_BINARY.
+
+Cropted Target Image:
+
+![blopdetect](https://user-images.githubusercontent.com/42059887/206837583-2f6fcd71-3c8b-4c54-a110-e60ed39fe090.png)
+
+Thresholding Target Image:
+
+![thres](https://user-images.githubusercontent.com/42059887/206837628-d5d0c93a-2042-4b6a-a1cb-dd9a6d44e149.png)
+
+Blop Detection On Target Image:
+
+![Plopdetect](https://user-images.githubusercontent.com/42059887/206837635-7c93b830-6305-48a1-86e2-107735bfff51.png)
 
 
 
