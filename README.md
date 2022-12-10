@@ -46,5 +46,12 @@ Blop Detection On Target Image:
 
 ![Plopdetect](https://user-images.githubusercontent.com/42059887/206837635-7c93b830-6305-48a1-86e2-107735bfff51.png)
 
+### Finding The Score
+<p align="justify"> To find the score on the target, i find the blop center point and target center point. Then, i have used analytical geometry to find the distance between these two points. After finding the distance i have compared this with targets circle radiuses.</p>
+
+Scan Result:
+
+![7 Score-1](https://user-images.githubusercontent.com/42059887/206857118-1a513eb2-f005-468b-a5f8-09d76b6c607f.png)
+
 
 
