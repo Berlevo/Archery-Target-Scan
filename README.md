@@ -10,7 +10,7 @@ Example Target Image:
 ![target2](https://user-images.githubusercontent.com/42059887/206720181-b62c156c-7f1b-47df-82eb-23894ca96db2.jpg)
 
 ### Hough Circle Transform
-<p align="justify"> In hough circle transform, i have created a loop to find 5 circles on the target. This loop takes 500 as max circle radius to find in the target and subtractes 50 from this radius until it reaches 0. In each iteration hough circle transform will try to find circles on the target. However there won't be 5 circles on the target after using hough circle tranform. There will be circles in between 0 to 10. Therefore, in order to get the accureate results i have looked each circles radius and center points. If 5 circles center point is very close to each other then i have taken those circles. Although if their radiuses are very close to each other i have taken them as well. </p>
+<p align="justify"> In hough circle transform, i have created a loop to find 5 circles on the target. This loop takes 500 as max circle radius to find in the target and subtractes 50 from this radius until it reaches 0. In each iteration hough circle transform will try to find circles on the target. However there won't be 5 circles on the target after using hough circle tranform. There will be circles in between 0 to 10. Therefore, in order to get the accurate results i have looked each circles radius and center points. If 5 circles center point is very close to each other then i have taken those circles. Although if their radiuses are very close to each other i have taken them as well. </p>
 
 Example Result From Hough Circle Transform:
 
