@@ -3,9 +3,22 @@ import numpy as np
 from matplotlib import pyplot as plt
 import math
 
-targetName = "C:\\Users\\v-count\\Desktop\\target2.jpg"
+#target1.jpg
+#New_target1.jfif
+targetName = "C:\\Users\\v-count\\Desktop\\re.jpg"
 img = cv.imread(targetName,0)
 template = cv.imread("C:\\Users\\v-count\\Desktop\\targetss.jpg",0)
+
+# Check if image size is bigger than 1000
+if img.shape[0] > 1000 and img.shape[1] > 1000:
+    template_width = int(img.shape[1] /2)
+    template_height = int(img.shape[0] /2)
+    dim = (template_width, template_height)
+
+    img = cv.resize(img, dim, interpolation = cv.INTER_AREA)
+    cv.imshow("Resized image", img)
+    cv.waitKey(0)
+
 
 All_circle_radius = []
 Selected_circle_radius = []
@@ -26,11 +39,17 @@ def hough_Transform(imgName):
     #Assign new image as cropted image
     if cropImg != "":
         imgName = cropImg
+
+    imgHs, imgWs = imgName.shape
     
-    max_radius = 500
+    subtracts = 50
+    max_radius = imgHs
+    ranges = int(max_radius/subtracts)
+
+
     counter = 0
-    for i in range(9):
-        max_radius = max_radius - 50
+    for i in range(ranges):
+        max_radius = max_radius - subtracts
         rows = imgName.shape[0]
         print(max_radius)
         circles = cv.HoughCircles(imgName, cv.HOUGH_GRADIENT, 1, rows / 8,
@@ -53,14 +72,14 @@ def hough_Transform(imgName):
                 RadiusDiffrence = abs(firstRadius - radius)
                 print(RadiusDiffrence)    
 
-                if RadiusDiffrence >= 0 and RadiusDiffrence <= 10 and counter != 0:
+                if ((RadiusDiffrence >= 0 and RadiusDiffrence <= 10)) and counter != 0:
                     continue
                 else:
                     Selected_circle_radius.append(radius)
                     center_points.append(i[0])
                     center_points.append(i[1])
                     # circle center
-                    cv.circle(imgName, center, 1, (0, 100, 100), 3)
+                    # cv.circle(imgName, center, 1, (0, 100, 100), 3)
                     # circle outline
                     cv.circle(imgName, center, radius, (255, 0, 255), 3)
                     print(center)
@@ -198,19 +217,24 @@ def Search_Circle():
         first_Num = Circle_locations[0]
         Removed_Center_Points.append(first_Num)
         countss = 0
+
         for i in range(1, len(Circle_locations)):
             if first_Num + i == Circle_locations[i]:
                 Removed_Center_Points.append(first_Num)
             else:
+                numss = Circle_locations[i] - Circle_locations[i - 2]
+
                 if countss == 0:
-                    Removed_Center_Points.append(first_Num+i)
+                    Removed_Center_Points.append(numss)
+                    # Removed_Center_Points.append(first_Num+i)
                     countss = countss + 1
                 else:
-                    Removed_Center_Points.append(first_Num+i-1)
+                    Removed_Center_Points.append(numss)
+                    # Removed_Center_Points.append(first_Num+i-1)
                     countss = 0
 
-        print(Removed_Center_Points)
-
+        print("Silinen noktalar",Removed_Center_Points)
+        print("noktalar silinmeden önceki hali", center_points)
         #Remove the center point that we remove radius
         for i in range(len(Removed_Center_Points)):
             del center_points[Removed_Center_Points[i]]
@@ -245,16 +269,19 @@ def Search_Circle():
     print(my_dict_x)
     print(my_dict_y)
 
-    #Remove the circle points and radius that are not in the same location
+    #Remove the circle points and radius that are not in the same location by looking at x coordinate
     counter1 = 0
+    check_y = True
     for x, x_count in list(my_dict_x.items()):
         key = x
         if x_count == 5:
+            check_y = False
             try_templateMatching = False
         for i in range(0, len(center_points), 2):
             if int(center_points[i - counter1]/100) != key:
-                center_points.remove(center_points[i-counter1])
-                center_points.remove(center_points[i-counter1])
+                del center_points[i-counter1]
+                del center_points[i-counter1]
+                
                 counter1 = counter1 + 2
                 try:
                     if i != 0:
@@ -262,6 +289,26 @@ def Search_Circle():
                 except:
                     del Selected_circle_radius[int(i/2)-1]
                     continue
+    #Remove the circle points and radius that are not in the same location by looking at y coordinate
+    if check_y == True:                
+        counter2 = 0
+        for y, y_count in list(my_dict_y.items()):
+            key = y
+            if y_count == 5:
+                try_templateMatching = False
+            for i in range(1, len(center_points), 2):
+                if int(center_points[i - counter2]/100) != key:
+                    del center_points[i-counter2-1]
+                    del center_points[i-counter2-1]
+
+                    counter2 = counter2 + 2
+                    nums = i - 1
+                    try:
+                        if nums != 0:
+                            del Selected_circle_radius[int(nums/2)]
+                    except:
+                        del Selected_circle_radius[int(nums/2)-1]
+                        continue
 
     print(Selected_circle_radius)
     print(center_points)
@@ -282,6 +329,13 @@ if try_templateMatching == True:
 
     for try_templateMatching_count in range(1, 10):
         img = cv.imread(targetName,0)
+        if img.shape[0] > 1000 and img.shape[1] > 1000:
+            template_width = int(img.shape[1] /2)
+            template_height = int(img.shape[0] /2)
+            dim = (template_width, template_height)
+
+            img = cv.resize(img, dim, interpolation = cv.INTER_AREA)
+
         template_Matching(template, img, try_templateMatching_count)
         try:
             hough_Transform(img)
@@ -331,13 +385,24 @@ rectY = max_center_points_y - max_radius
 print(rectX)
 print(rectY)
 
+# Crop Image To Find Blops 
 if isTemplate == 0:
     img = cv.imread(targetName,0)
-    imgW, imgH = img.shape
+    
 
+    if img.shape[0] > 1000 and img.shape[1] > 1000:
+        template_width = int(img.shape[1] /2)
+        template_height = int(img.shape[0] /2)
+        dim = (template_width, template_height)
+
+        img = cv.resize(img, dim, interpolation = cv.INTER_AREA)
+        cv.imshow("Resized image", img)
+        cv.waitKey(0)
+
+    imgW, imgH = img.shape
     croptedImg = img[rectY:(rectY+2*max_radius), rectX:(rectX+2*max_radius)]
     cropW, cropH = croptedImg.shape
-
+    
     farkW = abs(imgW - cropW)
     farkH = abs(imgH - cropH)
     print("farkw", farkW)
@@ -418,11 +483,12 @@ print(min_center_points_y)
 
 Selected_circle_radius.sort()
 print(Selected_circle_radius)
+print(Scored_Points)
 
-for i in range(2, len(Scored_Points), 2):
+for i in range(0, len(Scored_Points), 2):
 
-    point_radius_x = abs(min_center_points_x - (Scored_Points[i] + farkH))
-    point_radius_y = abs(min_center_points_y - (Scored_Points[i + 1] + farkW))
+    point_radius_x = abs(min_center_points_x - (Scored_Points[i] + farkH-80))
+    point_radius_y = abs(min_center_points_y - (Scored_Points[i + 1] + farkW-80))
 
     point_radius = math.sqrt(point_radius_x**2 + point_radius_y**2)
 
@@ -448,8 +514,13 @@ for i in range(2, len(Scored_Points), 2):
         cv.imshow("7 Score",croptedImg)
         cv.waitKey(0)
         plt.show()
-    elif point_radius >= Selected_circle_radius[3] and point_radius < Selected_circle_radius[4]:
+    elif point_radius >= Selected_circle_radius[3] and point_radius <= Selected_circle_radius[4]:
         cv.putText(img = croptedImg, text="6", org=(Scored_Points[i], Scored_Points[i + 1]), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=1, color=(255, 0, 0),thickness=1)
         cv.imshow("6 Score",croptedImg)
+        cv.waitKey(0)
+        plt.show()
+    else:
+        cv.putText(img = croptedImg, text="0", org=(Scored_Points[i], Scored_Points[i + 1]), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=1, color=(255, 0, 0),thickness=1)
+        cv.imshow("0 Score",croptedImg)
         cv.waitKey(0)
         plt.show()
