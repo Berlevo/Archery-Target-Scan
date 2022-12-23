@@ -3,23 +3,6 @@ import numpy as np
 from matplotlib import pyplot as plt
 import math
 
-#target1.jpg
-#New_target1.jfif
-targetName = "C:\\Users\\v-count\\Desktop\\re.jpg"
-img = cv.imread(targetName,0)
-template = cv.imread("C:\\Users\\v-count\\Desktop\\targetss.jpg",0)
-
-# Check if image size is bigger than 1000
-if img.shape[0] > 1000 and img.shape[1] > 1000:
-    template_width = int(img.shape[1] /2)
-    template_height = int(img.shape[0] /2)
-    dim = (template_width, template_height)
-
-    img = cv.resize(img, dim, interpolation = cv.INTER_AREA)
-    cv.imshow("Resized image", img)
-    cv.waitKey(0)
-
-
 All_circle_radius = []
 Selected_circle_radius = []
 Removed_Circle_radius_points = []
@@ -34,10 +17,54 @@ try_templateMatching = True
 done = True
 isTemplate = 0
 Scored_Points = []
+template_scale_percent = 100
+targetName = ""
+template = ""
+croptedImg = ""
+thresh1 = ""
+farkW = 0
+farkH = 0
+isTemplate = 0
+farkList = []
+farkList1 = []
+
+def main():
+    global targetName, template, done, cropImg
+    #target1.jpg
+    #New_target1.jfif
+    targetName = "C:\\Users\\v-count\\Desktop\\New_target1.jfif"
+    img = cv.imread(targetName, 0)
+    template = cv.imread("C:\\Users\\v-count\\Desktop\\targetss.jpg",0)
+
+    # Check if image size is bigger than 1000
+    if img.shape[0] > 1000 and img.shape[1] > 1000:
+        template_width = int(img.shape[1] /2)
+        template_height = int(img.shape[0] /2)
+        dim = (template_width, template_height)
+
+        img = cv.resize(img, dim, interpolation = cv.INTER_AREA)
+        cv.imshow("Resized image", img)
+        cv.waitKey(0)
+
+    hough_Transform(img)
+    Search_Circle()
+    Is_TemplateMatching()
+    cropImage()
+    ThresHolding()
+    print(cv.countNonZero(thresh1))
+    if cv.countNonZero(thresh1) == 0:
+        print ("Image is black")
+    else:
+        print ("Colored image")
+    # AdaptiveThreshold()
+    # erode()
+    BlopDetection()
+    Get_Scores()
+
 
 def hough_Transform(imgName):
     #Assign new image as cropted image
-    if cropImg != "":
+    if cropImg != "":   
         imgName = cropImg
 
     imgHs, imgWs = imgName.shape
@@ -53,12 +80,12 @@ def hough_Transform(imgName):
         rows = imgName.shape[0]
         print(max_radius)
         circles = cv.HoughCircles(imgName, cv.HOUGH_GRADIENT, 1, rows / 8,
-                                param1=100, param2=30,
+                                param1=60, param2=30,
                                 minRadius=1, maxRadius=max_radius)
 
         if circles is not None:
             circles = np.uint16(np.around(circles))
-            for i in circles[0, 0:1]:
+            for i in circles[0, 0:1]:   
                 center = (i[0], i[1])
                 radius = i[2]
                         
@@ -79,8 +106,10 @@ def hough_Transform(imgName):
                     center_points.append(i[0])
                     center_points.append(i[1])
                     # circle center
-                    # cv.circle(imgName, center, 1, (0, 100, 100), 3)
+                    if isTemplate == 1:
+                        cv.circle(imgName, center, 1, (0, 100, 100), 3)
                     # circle outline
+                    # cv.circle(imgName, center, radius, (0, 0, 0), 3)
                     cv.circle(imgName, center, radius, (255, 0, 255), 3)
                     print(center)
                     cv.imshow("detected circles", imgName)
@@ -88,90 +117,72 @@ def hough_Transform(imgName):
                     counter = 1
 
 def template_Matching(TemplateImg, TargetImg, Counter):
-    global cropImg
-    template_scale_percent = 100
+    global cropImg, template_scale_percent, isTemplate
     target_scale_percent1 = 100
+    isTemplate = 1
+    
+    #Template scaling
+    template_scale_percent = template_scale_percent - 10
+    template_width = int(TemplateImg.shape[1] * (template_scale_percent / 100))
+    template_height = int(TemplateImg.shape[0] * (template_scale_percent / 100))
+    dim = (template_width, template_height)
 
-    for i in range(Counter):
+    resizeds = cv.resize(TemplateImg, dim, interpolation = cv.INTER_AREA)
+    cv.imshow("Resized image", resizeds)
+    cv.waitKey(0)
 
-        #Template scaling
-        template_scale_percent = template_scale_percent - 10
-        template_width = int(TemplateImg.shape[1] * (template_scale_percent / 100))
-        template_height = int(TemplateImg.shape[0] * (template_scale_percent / 100))
-        dim = (template_width, template_height)
+    #Targer Scaling
+    # scale_percent1 = scale_percent1 - 10
+    target_width = int(TargetImg.shape[1] * (target_scale_percent1 / 100))
+    target_height = int(TargetImg.shape[0] * (target_scale_percent1 / 100))
+    dim1 = (target_width+20, target_height+20)
 
-        resizeds = cv.resize(TemplateImg, dim, interpolation = cv.INTER_AREA)
-        cv.imshow("Resized image", resizeds)
-        cv.waitKey(0)
+    target_scaled = cv.resize(TargetImg, dim1, interpolation = cv.INTER_AREA)
+    # cv.imshow("Resized image", target_scaled)
+    # cv.waitKey(0)
+    print(target_width, target_height)
 
-        #Targer Scaling
-        # scale_percent1 = scale_percent1 - 10
-        target_width = int(TargetImg.shape[1] * (target_scale_percent1 / 100))
-        target_height = int(TargetImg.shape[0] * (target_scale_percent1 / 100))
-        dim1 = (target_width+20, target_height+20)
+    # template.resize((template_height, template_width))
+    h, w = TemplateImg.shape
+    print(template_width, template_height)
 
-        target_scaled = cv.resize(TargetImg, dim1, interpolation = cv.INTER_AREA)
-        # cv.imshow("Resized image", target_scaled)
-        # cv.waitKey(0)
-        print(target_width, target_height)
+    #Template Matching
+    meth = "cv.TM_SQDIFF_NORMED"
 
-        # template.resize((template_height, template_width))
-        h, w = TemplateImg.shape
-        print(template_width, template_height)
+    method = eval(meth)
+    color = (0, 0, 0)
 
+    try:
+        # Apply template Matching
+        res = cv.matchTemplate(target_scaled,resizeds,method)
+        min_val, max_val, min_loc, max_loc = cv.minMaxLoc(res)
 
-        # plt.imshow(template,cmap = 'gray')
-        # plt.show()
-        # All the 6 methods for comparison in a list
-        # methods = ['cv.TM_CCOEFF', 'cv.TM_CCOEFF_NORMED', 'cv.TM_CCORR',
-        #             'cv.TM_CCORR_NORMED', 'cv.TM_SQDIFF', 'cv.TM_SQDIFF_NORMED']
-        # for meth in methods:
+        # If the method is TM_SQDIFF or TM_SQDIFF_NORMED, take minimum
+        if method in [cv.TM_SQDIFF, cv.TM_SQDIFF_NORMED]:
+            top_left = min_loc
+        else:
+            top_left = max_loc
+        bottom_right = (top_left[0] + w, top_left[1] + h)
 
-        meth = "cv.TM_SQDIFF_NORMED"
+        # circle properties
+        midx = (top_left[0] + bottom_right[0])//2
+        midy = (top_left[1] + bottom_right[1])//2
+        center_coordinates = midx, midy
+        print(midx, midy)
+        radius = int(math.sqrt((top_left[0]-midx)**2+(top_left[1]-midy)**2)/math.sqrt(2))
 
-        method = eval(meth)
-        color = (0, 0, 0)
+        cv.rectangle(target_scaled,top_left, bottom_right, color, 2)
+        # cv.circle(target_scaled, center_coordinates, radius, color, 2)
 
-        try:
-            # Apply template Matching
-            res = cv.matchTemplate(target_scaled,resizeds,method)
-            min_val, max_val, min_loc, max_loc = cv.minMaxLoc(res)
-
-            # If the method is TM_SQDIFF or TM_SQDIFF_NORMED, take minimum
-            if method in [cv.TM_SQDIFF, cv.TM_SQDIFF_NORMED]:
-                top_left = min_loc
-            else:
-                top_left = max_loc
-            bottom_right = (top_left[0] + w, top_left[1] + h)
-
-            # circle properties
-            midx = (top_left[0] + bottom_right[0])//2
-            midy = (top_left[1] + bottom_right[1])//2
-            center_coordinates = midx, midy
-            print(midx, midy)
-            radius = int(math.sqrt((top_left[0]-midx)**2+(top_left[1]-midy)**2)/math.sqrt(2))
-
-            cv.rectangle(target_scaled,top_left, bottom_right, color, 2)
-            # cv.circle(target_scaled, center_coordinates, radius, color, 2)
-
-            #Cropted Image
-            rectX = midx - radius
-            rectY = midy - radius
-            cropImg = target_scaled[rectY:(rectY+2*radius), rectX:(rectX+2*radius)]
-
-            plt.imshow(cropImg,cmap = 'gray')
-            plt.show()
-
-        except:
-            continue
-
-
-hough_Transform(img)
-# template_Matching(template, img, 9)
-# hough_Transform(img)
-
-print(center_points)
-print(Selected_circle_radius)
+        #Cropted Image
+        rectX = midx - radius
+        rectY = midy - radius
+        cropImg = target_scaled[rectY:(rectY+2*radius), rectX:(rectX+2*radius)]
+        # cropImg = cv.rectangle(target_scaled,top_left, bottom_right, color, 2)
+        plt.imshow(cropImg,cmap = 'gray')
+        plt.show()
+    except:
+        print("")
 
 
 def Search_Circle():
@@ -259,7 +270,7 @@ def Search_Circle():
     print(my_dict_y)
 
     for x, x_count in list(my_dict_x.items()):
-        if x_count != 5:
+        if x_count != 5 and x_count != 4:
             my_dict_x.pop(x)
 
     for y, y_count in list(my_dict_y.items()):
@@ -269,14 +280,15 @@ def Search_Circle():
     print(my_dict_x)
     print(my_dict_y)
 
+    check = 0
+    check1 = 0
     #Remove the circle points and radius that are not in the same location by looking at x coordinate
     counter1 = 0
     check_y = True
     for x, x_count in list(my_dict_x.items()):
         key = x
         if x_count == 5:
-            check_y = False
-            try_templateMatching = False
+            check = 1
         for i in range(0, len(center_points), 2):
             if int(center_points[i - counter1]/100) != key:
                 del center_points[i-counter1]
@@ -289,13 +301,14 @@ def Search_Circle():
                 except:
                     del Selected_circle_radius[int(i/2)-1]
                     continue
+
     #Remove the circle points and radius that are not in the same location by looking at y coordinate
     if check_y == True:                
         counter2 = 0
         for y, y_count in list(my_dict_y.items()):
             key = y
             if y_count == 5:
-                try_templateMatching = False
+                check1 = 1
             for i in range(1, len(center_points), 2):
                 if int(center_points[i - counter2]/100) != key:
                     del center_points[i-counter2-1]
@@ -310,44 +323,67 @@ def Search_Circle():
                         del Selected_circle_radius[int(nums/2)-1]
                         continue
 
+    # for x, x_count in list(my_dict_x.items()):
+    #     if x_count == 4:
+    #         for i in range(0, len(center_points), 2):
+    #             if int(center_points[i]/100) == key:
+    #                 center_points.append(center_points[i])
+    #                 center_points.append(center_points[i+1])
+    #                 break
+
+    #         Selected_circle_radius.sort()
+    #         for i in range(len(Selected_circle_radius)):
+    #             if (i+1) < len(Selected_circle_radius):
+    #                 fark = abs(Selected_circle_radius[i + 1] - Selected_circle_radius[i])
+    #                 farkList.append(fark)
+
+    #         for i in range(len(farkList)):
+    #             if (i+1) < len(farkList):
+    #                 fark1 = abs(farkList[i + 1] - farkList[i])
+    #                 farkList1.append(fark1)
+
+    #         print(farkList)
+    #         print(farkList1)
+
+
+    #         for i in range(len(farkList1)):
+    #             if (i+1) < len(farkList1):
+    #                 fark2 = abs(farkList1[i + 1] - farkList1[i])
+    #                 if fark2 > 20:
+    #                     print(fark2)
+
+    center_points_x.clear()
+    center_points_y.clear()                
+    for i in range(0, len(center_points), 2):
+        center_points_x.append(int(center_points[i]/100))
+
+    for i in range(1, len(center_points), 2):
+        center_points_y.append(int(center_points[i]/100))
+
+    my_dict_x = {i: center_points_x.count(i) for i  in center_points_x}
+    my_dict_y = {i: center_points_y.count(i) for i  in center_points_y}
+
+    for x, x_count in list(my_dict_x.items()):
+        if x_count == 5:
+            check = 1
+
+    for y, y_count in list(my_dict_y.items()):
+        if y_count == 5:
+            check1 = 1
+    
+    print(my_dict_x)
+    print(my_dict_y)
+
+    if check == 1 and check1 == 1:
+        try_templateMatching = False
+
     print(Selected_circle_radius)
     print(center_points)
 
-Search_Circle()
-
-if try_templateMatching == True:
-    isTemplate = 1
-    All_circle_radius.clear()
-    Selected_circle_radius.clear()
-    Removed_Circle_radius_points.clear()
-    center_points.clear()
-    center_points_x.clear()
-    center_points_y.clear()
-    Removed_Center_Points.clear()
-    Circle_locations.clear()
-    updated_Circle_radius_points.clear()
-
-    for try_templateMatching_count in range(1, 10):
-        img = cv.imread(targetName,0)
-        if img.shape[0] > 1000 and img.shape[1] > 1000:
-            template_width = int(img.shape[1] /2)
-            template_height = int(img.shape[0] /2)
-            dim = (template_width, template_height)
-
-            img = cv.resize(img, dim, interpolation = cv.INTER_AREA)
-
-        template_Matching(template, img, try_templateMatching_count)
-        try:
-            hough_Transform(img)
-        except:
-            continue
-
-        Search_Circle()
-        if try_templateMatching == False:
-            break
-        if try_templateMatching_count == 9:
-            done = False
-
+def Is_TemplateMatching():
+    global isTemplate, done
+    if try_templateMatching == True:
+        isTemplate = 1
         All_circle_radius.clear()
         Selected_circle_radius.clear()
         Removed_Circle_radius_points.clear()
@@ -358,169 +394,227 @@ if try_templateMatching == True:
         Circle_locations.clear()
         updated_Circle_radius_points.clear()
 
-if done == False:
-    print("Take Picture Again!!")
+        for try_templateMatching_count in range(1, 10):
+            img = cv.imread(targetName,0)
 
-max_radius = Selected_circle_radius[0]
-counterss = 0
-for i in range(1, len(Selected_circle_radius)):
-    if Selected_circle_radius[i] > max_radius:
-        max_radius = Selected_circle_radius[i]
-        counterss = i
+            if img.shape[0] > 1000 and img.shape[1] > 1000:
+                template_width = int(img.shape[1] /2)
+                template_height = int(img.shape[0] /2)
+                dim = (template_width, template_height)
 
-max_center_points_x = 0
-max_center_points_y = 0
-for i in range(len(center_points)):
-    if int(i/2) == counterss:
-        max_center_points_x = center_points[i-1]
-        max_center_points_y = center_points[i]
+                img = cv.resize(img, dim, interpolation = cv.INTER_AREA)
 
-print(max_center_points_x)
-print(max_center_points_y)
-print(max_radius)
+            template_Matching(template, img, try_templateMatching_count)
+            try:
+                hough_Transform(img)
+            except:
+                continue
 
-rectX = max_center_points_x + 10 - max_radius
-rectY = max_center_points_y - max_radius
+            Search_Circle()
+            if try_templateMatching == False:
+                break
+            if try_templateMatching_count == 9:
+                done = False
 
-print(rectX)
-print(rectY)
+            All_circle_radius.clear()
+            Selected_circle_radius.clear()
+            Removed_Circle_radius_points.clear()
+            center_points.clear()
+            center_points_x.clear()
+            center_points_y.clear()
+            Removed_Center_Points.clear()
+            Circle_locations.clear()
+            updated_Circle_radius_points.clear()
 
-# Crop Image To Find Blops 
-if isTemplate == 0:
-    img = cv.imread(targetName,0)
-    
+    if done == False:
+        print("Take Picture Again!!")
 
-    if img.shape[0] > 1000 and img.shape[1] > 1000:
-        template_width = int(img.shape[1] /2)
-        template_height = int(img.shape[0] /2)
-        dim = (template_width, template_height)
+def cropImage():
+    global croptedImg, farkW, farkH
+    max_radius = Selected_circle_radius[0]
+    counterss = 0
+    for i in range(1, len(Selected_circle_radius)):
+        if Selected_circle_radius[i] > max_radius:
+            max_radius = Selected_circle_radius[i]
+            counterss = i
 
-        img = cv.resize(img, dim, interpolation = cv.INTER_AREA)
-        cv.imshow("Resized image", img)
-        cv.waitKey(0)
+    max_center_points_x = 0
+    max_center_points_y = 0
+    for i in range(len(center_points)):
+        if int(i/2) == counterss:
+            max_center_points_x = center_points[i-1]
+            max_center_points_y = center_points[i]
 
-    imgW, imgH = img.shape
-    croptedImg = img[rectY:(rectY+2*max_radius), rectX:(rectX+2*max_radius)]
-    cropW, cropH = croptedImg.shape
-    
-    farkW = abs(imgW - cropW)
-    farkH = abs(imgH - cropH)
-    print("farkw", farkW)
-    print("farkH", farkH)
+    print("max x",max_center_points_x)
+    print("max y",max_center_points_y)
+    print("max yarıçap",max_radius)
 
-    plt.imshow(croptedImg,cmap = 'gray')
-    plt.show()
-else:
-    templateW, templateH = cropImg.shape
+    rectX = abs(max_center_points_x + 10 - max_radius)
+    rectY = abs(max_center_points_y - max_radius)
 
-    croptedImg = cropImg[rectY:(rectY+2*max_radius), rectX:(rectX+2*max_radius)]
-    cropW, cropH = croptedImg.shape
+    print(rectX)
+    print(rectY)
 
-    farkW = abs(templateW - cropW)
-    farkH = abs(templateH - cropH)
+    # Crop Image To Find Blops 
+    if isTemplate == 0:
+        img = cv.imread(targetName,0)
+        
 
-    plt.imshow(croptedImg,cmap = 'gray')
-    plt.show()
+        if img.shape[0] > 1000 and img.shape[1] > 1000:
+            template_width = int(img.shape[1] /2)
+            template_height = int(img.shape[0] /2)
+            dim = (template_width, template_height)
 
-#Threshold
-ret,thresh1 = cv.threshold(croptedImg,30,255,cv.THRESH_BINARY)
-plt.imshow(thresh1,cmap = 'gray')
-plt.show()
+            img = cv.resize(img, dim, interpolation = cv.INTER_AREA)
+            cv.imshow("Resized image", img)
+            cv.waitKey(0)
 
-#Blop Param
-params = cv.SimpleBlobDetector_Params()
+        imgW, imgH = img.shape
+        croptedImg = img[rectY:(rectY+2*max_radius), rectX:(rectX+2*max_radius)]
+        cropW, cropH = croptedImg.shape
+        
+        farkW = abs(imgW - cropW)
+        farkH = abs(imgH - cropH)
+        print("farkw", farkW)
+        print("farkH", farkH)
 
-# Filter by Area.
-params.filterByArea = True
-params.minArea = 80
-
-# Filter by Circularity
-params.filterByCircularity = True
-params.minCircularity = 0.1
-
-# Filter by Convexity
-params.filterByConvexity = True
-params.minConvexity = 0.1
-
-# Filter by Inertia
-params.filterByInertia = True
-params.minInertiaRatio = 0.01
-
-#Blop Detection
-detector = cv.SimpleBlobDetector_create(params)
-keypoints = detector.detect(thresh1)
-with_keypoints = cv.drawKeypoints(thresh1, keypoints, np.array([]), (0, 0, 255), cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-cv.imshow("KeyPoints", with_keypoints)
-cv.waitKey(0)
-plt.show()
-
-#Locations of points
-num_of_points = len(keypoints)
-for count in range(num_of_points):
-    Scored_Points.append(int(keypoints[count].pt[0]))
-    Scored_Points.append(int(keypoints[count].pt[1]))
-    print(keypoints[count].pt)
-
-
-print(Scored_Points)
-
-min_radius = Selected_circle_radius[0]
-counteris = 0
-for i in range(1, len(Selected_circle_radius)):
-    if Selected_circle_radius[i] < min_radius:
-        min_radius = Selected_circle_radius[i]
-        counteris = i
-
-min_center_points_x = 0
-min_center_points_y = 0
-for i in range(len(center_points)):
-    if int(i/2) == counteris:
-        min_center_points_x = center_points[i-1]
-        min_center_points_y = center_points[i]
-
-print(min_center_points_x)
-print(min_center_points_y)
-
-Selected_circle_radius.sort()
-print(Selected_circle_radius)
-print(Scored_Points)
-
-for i in range(0, len(Scored_Points), 2):
-
-    point_radius_x = abs(min_center_points_x - (Scored_Points[i] + farkH-80))
-    point_radius_y = abs(min_center_points_y - (Scored_Points[i + 1] + farkW-80))
-
-    point_radius = math.sqrt(point_radius_x**2 + point_radius_y**2)
-
-    print(point_radius)
-
-    if point_radius <= Selected_circle_radius[0]:
-        cv.putText(img = croptedImg, text="10", org=(Scored_Points[i], Scored_Points[i + 1]), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=1, color=(255, 0, 0),thickness=1)
-        cv.imshow("10 Score",croptedImg)
-        cv.waitKey(0)
-        plt.show()
-    elif point_radius >= Selected_circle_radius[0] and point_radius <= Selected_circle_radius[1]:
-        cv.putText(img = croptedImg, text="9", org=(Scored_Points[i], Scored_Points[i + 1]), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=1, color=(255, 0, 0),thickness=1)
-        cv.imshow("9 Score",croptedImg)
-        cv.waitKey(0)
-        plt.show()
-    elif point_radius >= Selected_circle_radius[1] and point_radius <= Selected_circle_radius[2]:
-        cv.putText(img = croptedImg, text="8", org=(Scored_Points[i], Scored_Points[i + 1]), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=1, color=(255, 0, 0),thickness=1)
-        cv.imshow("8 Score",croptedImg)
-        cv.waitKey(0)
-        plt.show()
-    elif point_radius >= Selected_circle_radius[2] and point_radius <= Selected_circle_radius[3]:
-        cv.putText(img = croptedImg, text="7", org=(Scored_Points[i], Scored_Points[i + 1]), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=1, color=(255, 0, 0),thickness=1)
-        cv.imshow("7 Score",croptedImg)
-        cv.waitKey(0)
-        plt.show()
-    elif point_radius >= Selected_circle_radius[3] and point_radius <= Selected_circle_radius[4]:
-        cv.putText(img = croptedImg, text="6", org=(Scored_Points[i], Scored_Points[i + 1]), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=1, color=(255, 0, 0),thickness=1)
-        cv.imshow("6 Score",croptedImg)
-        cv.waitKey(0)
+        plt.imshow(croptedImg,cmap = 'gray')
         plt.show()
     else:
-        cv.putText(img = croptedImg, text="0", org=(Scored_Points[i], Scored_Points[i + 1]), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=1, color=(255, 0, 0),thickness=1)
-        cv.imshow("0 Score",croptedImg)
-        cv.waitKey(0)
+
+        templateW, templateH = cropImg.shape
+
+        # orImageW, orImageH = img.shape
+        # farkXW = abs(orImageW -templateW)
+        # farkYH = abs(orImageH- templateH)
+        # rectX = rectX + farkYH
+        # rectY = rectY + farkXW
+
+        croptedImg = cropImg[rectY:(rectY+2*max_radius), rectX:(rectX+2*max_radius)]
+        cropW, cropH = croptedImg.shape
+
+        farkW = abs(templateW - cropW)
+        farkH = abs(templateH - cropH)
+
+        plt.imshow(croptedImg,cmap = 'gray')
         plt.show()
+
+def ThresHolding():
+    global thresh1
+    #Threshold
+    ret,thresh1 = cv.threshold(croptedImg,30,255,cv.THRESH_BINARY)
+    plt.imshow(thresh1,cmap = 'gray')
+    plt.show()
+
+def AdaptiveThreshold():
+    global thresh1
+    thresh1 = cv.adaptiveThreshold(croptedImg,255,cv.ADAPTIVE_THRESH_GAUSSIAN_C,\
+                cv.THRESH_BINARY,11,8)
+    plt.imshow(thresh1,cmap = 'gray')
+    plt.show()
+
+def erode():
+    global thresh1
+    kernel = np.ones((5, 5), np.uint8)
+    thresh1 = cv.erode(thresh1, kernel, iterations=1)
+
+def BlopDetection():
+    #Blop Param
+    params = cv.SimpleBlobDetector_Params()
+
+    # Filter by Area.
+    params.filterByArea = True
+    params.minArea = 80
+
+    # Filter by Circularity
+    params.filterByCircularity = True
+    params.minCircularity = 0.1
+
+    # Filter by Convexity
+    params.filterByConvexity = True
+    params.minConvexity = 0.1
+
+    # Filter by Inertia
+    params.filterByInertia = True
+    params.minInertiaRatio = 0.01
+
+    #Blop Detection
+    detector = cv.SimpleBlobDetector_create(params)
+    keypoints = detector.detect(thresh1)
+    with_keypoints = cv.drawKeypoints(thresh1, keypoints, np.array([]), (0, 0, 255), cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    cv.imshow("KeyPoints", with_keypoints)
+    cv.waitKey(0)
+    plt.show()
+
+    #Locations of points
+    num_of_points = len(keypoints)
+    for count in range(num_of_points):
+        Scored_Points.append(int(keypoints[count].pt[0]))
+        Scored_Points.append(int(keypoints[count].pt[1]))
+        print(keypoints[count].pt)
+
+    print(Scored_Points)
+
+def Get_Scores():
+    min_radius = Selected_circle_radius[0]
+    counteris = 0
+    for i in range(1, len(Selected_circle_radius)):
+        if Selected_circle_radius[i] < min_radius:
+            min_radius = Selected_circle_radius[i]
+            counteris = i
+
+    min_center_points_x = 0
+    min_center_points_y = 0
+    for i in range(len(center_points)):
+        if int(i/2) == counteris:
+            min_center_points_x = center_points[i-1]
+            min_center_points_y = center_points[i]
+
+    print(min_center_points_x)
+    print(min_center_points_y)
+
+    Selected_circle_radius.sort()
+    print(Selected_circle_radius)
+    print(Scored_Points)
+
+    for i in range(0, len(Scored_Points), 2):
+
+        point_radius_x = abs(min_center_points_x - (Scored_Points[i] + farkH-80))
+        point_radius_y = abs(min_center_points_y - (Scored_Points[i + 1] + farkW-80))
+
+        point_radius = math.sqrt(point_radius_x**2 + point_radius_y**2)
+
+        print(point_radius)
+
+        if point_radius <= Selected_circle_radius[0]:
+            cv.putText(img = croptedImg, text="10", org=(Scored_Points[i], Scored_Points[i + 1]), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=1, color=(255, 0, 0),thickness=1)
+            cv.imshow("10 Score",croptedImg)
+            cv.waitKey(0)
+            plt.show()
+        elif point_radius >= Selected_circle_radius[0] and point_radius <= Selected_circle_radius[1]:
+            cv.putText(img = croptedImg, text="9", org=(Scored_Points[i], Scored_Points[i + 1]), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=1, color=(255, 0, 0),thickness=1)
+            cv.imshow("9 Score",croptedImg)
+            cv.waitKey(0)
+            plt.show()
+        elif point_radius >= Selected_circle_radius[1] and point_radius <= Selected_circle_radius[2]:
+            cv.putText(img = croptedImg, text="8", org=(Scored_Points[i], Scored_Points[i + 1]), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=1, color=(255, 0, 0),thickness=1)
+            cv.imshow("8 Score",croptedImg)
+            cv.waitKey(0)
+            plt.show()
+        elif point_radius >= Selected_circle_radius[2] and point_radius <= Selected_circle_radius[3]:
+            cv.putText(img = croptedImg, text="7", org=(Scored_Points[i], Scored_Points[i + 1]), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=1, color=(255, 0, 0),thickness=1)
+            cv.imshow("7 Score",croptedImg)
+            cv.waitKey(0)
+            plt.show()
+        elif point_radius >= Selected_circle_radius[3] and point_radius <= Selected_circle_radius[4]:
+            cv.putText(img = croptedImg, text="6", org=(Scored_Points[i], Scored_Points[i + 1]), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=1, color=(255, 0, 0),thickness=1)
+            cv.imshow("6 Score",croptedImg)
+            cv.waitKey(0)
+            plt.show()
+        else:
+            cv.putText(img = croptedImg, text="0", org=(Scored_Points[i], Scored_Points[i + 1]), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=1, color=(255, 0, 0),thickness=1)
+            cv.imshow("0 Score",croptedImg)
+            cv.waitKey(0)
+            plt.show()
+
+main()
