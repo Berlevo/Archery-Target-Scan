@@ -32,9 +32,11 @@ def main():
     global targetName, template, done, cropImg
     #target1.jpg
     #New_target1.jfif
-    targetName = "C:\\Users\\v-count\\Desktop\\New_target1.jfif"
+    
+    #"C:\\Users\\Berlevo\\Desktop\\Bitirme\\Ders\\TargetImage\\target1.jpg"
+    targetName = "C:\\Users\\Berlevo\\Desktop\\Bitirme\\Ders\\TargetImage\\NewTarget7.jpg"
     img = cv.imread(targetName, 0)
-    template = cv.imread("C:\\Users\\v-count\\Desktop\\targetss.jpg",0)
+    template = cv.imread("C:\\Users\\Berlevo\\Desktop\\Bitirme\\Ders\\TargetImage\\targetss.jpg",0)
 
     # Check if image size is bigger than 1000
     if img.shape[0] > 1000 and img.shape[1] > 1000:
@@ -50,14 +52,6 @@ def main():
     Search_Circle()
     Is_TemplateMatching()
     cropImage()
-    ThresHolding()
-    print(cv.countNonZero(thresh1))
-    if cv.countNonZero(thresh1) == 0:
-        print ("Image is black")
-    else:
-        print ("Colored image")
-    # AdaptiveThreshold()
-    # erode()
     BlopDetection()
     Get_Scores()
 
@@ -73,14 +67,13 @@ def hough_Transform(imgName):
     max_radius = imgHs
     ranges = int(max_radius/subtracts)
 
-
     counter = 0
     for i in range(ranges):
         max_radius = max_radius - subtracts
         rows = imgName.shape[0]
         print(max_radius)
         circles = cv.HoughCircles(imgName, cv.HOUGH_GRADIENT, 1, rows / 8,
-                                param1=60, param2=30,
+                                param1=100, param2=30,
                                 minRadius=1, maxRadius=max_radius)
 
         if circles is not None:
@@ -88,17 +81,12 @@ def hough_Transform(imgName):
             for i in circles[0, 0:1]:   
                 center = (i[0], i[1])
                 radius = i[2]
-                        
                 All_circle_radius.append(radius)
                 print(radius)
-
                 arrLen = len(All_circle_radius)
-
-                firstRadius = All_circle_radius[arrLen - 2]
-                                        
+                firstRadius = All_circle_radius[arrLen - 2]                   
                 RadiusDiffrence = abs(firstRadius - radius)
                 print(RadiusDiffrence)    
-
                 if ((RadiusDiffrence >= 0 and RadiusDiffrence <= 10)) and counter != 0:
                     continue
                 else:
@@ -109,7 +97,6 @@ def hough_Transform(imgName):
                     if isTemplate == 1:
                         cv.circle(imgName, center, 1, (0, 100, 100), 3)
                     # circle outline
-                    # cv.circle(imgName, center, radius, (0, 0, 0), 3)
                     cv.circle(imgName, center, radius, (255, 0, 255), 3)
                     print(center)
                     cv.imshow("detected circles", imgName)
@@ -269,13 +256,19 @@ def Search_Circle():
     print(my_dict_x)
     print(my_dict_y)
 
+    numx = 0
+    numy = 0
     for x, x_count in list(my_dict_x.items()):
         if x_count != 5 and x_count != 4:
             my_dict_x.pop(x)
+        if x_count == 3:
+            numx = x
 
     for y, y_count in list(my_dict_y.items()):
-        if y_count != 5:
+        if y_count != 5 and y_count != 4:
             my_dict_y.pop(y)
+        if y_count == 3:
+            numy = y
 
     print(my_dict_x)
     print(my_dict_y)
@@ -289,6 +282,9 @@ def Search_Circle():
         key = x
         if x_count == 5:
             check = 1
+            numx = x
+        if x_count == 4:
+            numx = x
         for i in range(0, len(center_points), 2):
             if int(center_points[i - counter1]/100) != key:
                 del center_points[i-counter1]
@@ -309,6 +305,9 @@ def Search_Circle():
             key = y
             if y_count == 5:
                 check1 = 1
+                numy = y
+            if y_count == 4:
+                numy = y
             for i in range(1, len(center_points), 2):
                 if int(center_points[i - counter2]/100) != key:
                     del center_points[i-counter2-1]
@@ -322,35 +321,40 @@ def Search_Circle():
                     except:
                         del Selected_circle_radius[int(nums/2)-1]
                         continue
+    
+    print("güncel1", Selected_circle_radius)
+    print("güncel1", center_points)
 
-    # for x, x_count in list(my_dict_x.items()):
-    #     if x_count == 4:
-    #         for i in range(0, len(center_points), 2):
-    #             if int(center_points[i]/100) == key:
-    #                 center_points.append(center_points[i])
-    #                 center_points.append(center_points[i+1])
-    #                 break
+    numx1 = 0
+    numy1 = 0
+    #Change center points that are close to each other 300, 400, 290, 390 = 300, 400, 300, 400
+    # if len(my_dict_x) != 0:
+    for i in range(0,len(center_points),2):
+        if int(center_points[i]/100) == numx:
+            numx1 = center_points[i]
+            break
 
-    #         Selected_circle_radius.sort()
-    #         for i in range(len(Selected_circle_radius)):
-    #             if (i+1) < len(Selected_circle_radius):
-    #                 fark = abs(Selected_circle_radius[i + 1] - Selected_circle_radius[i])
-    #                 farkList.append(fark)
+    for i in range(0,len(center_points),2):
+        if int(center_points[i]/100) != numx:
+            if abs(np.int16(numx1 - center_points[i])) < 15:
+                center_points[i] = numx1
 
-    #         for i in range(len(farkList)):
-    #             if (i+1) < len(farkList):
-    #                 fark1 = abs(farkList[i + 1] - farkList[i])
-    #                 farkList1.append(fark1)
+    # if len(my_dict_y) != 0:
+    for i in range(1,len(center_points),2):
+        if int(center_points[i]/100) == numy:
+            numy1 = center_points[i]
+            break
 
-    #         print(farkList)
-    #         print(farkList1)
+    for i in range(1,len(center_points),2):
+        if int(center_points[i]/100) != numy:
+            if abs(np.int16(numy1 - center_points[i])) < 15:
+                center_points[i] = numy1
 
-
-    #         for i in range(len(farkList1)):
-    #             if (i+1) < len(farkList1):
-    #                 fark2 = abs(farkList1[i + 1] - farkList1[i])
-    #                 if fark2 > 20:
-    #                     print(fark2)
+    #Add 5th circle if there is 4 circles
+    print("güncel", Selected_circle_radius)
+    print("güncel", center_points)
+     
+    AddCircle()
 
     center_points_x.clear()
     center_points_y.clear()                
@@ -379,6 +383,90 @@ def Search_Circle():
 
     print(Selected_circle_radius)
     print(center_points)
+
+
+def AddCircle():
+    center_points_x.clear()
+    center_points_y.clear() 
+    for i in range(0, len(center_points), 2):
+        center_points_x.append(int(center_points[i]/100))
+
+    for i in range(1, len(center_points), 2):
+        center_points_y.append(int(center_points[i]/100))
+
+    my_dict_x = {i: center_points_x.count(i) for i  in center_points_x}
+    my_dict_y = {i: center_points_y.count(i) for i  in center_points_y}
+
+    for x, x_count in list(my_dict_x.items()):
+        key = x
+        if x_count == 4:
+            for i in range(0, len(center_points), 2):
+                if int(center_points[i]/100) == key:
+                    center_points.append(center_points[i])
+                    center_points.append(center_points[i+1])
+                    break
+
+            Selected_circle_radius.sort()
+            for i in range(len(Selected_circle_radius)):
+                if (i+1) < len(Selected_circle_radius):
+                    fark = abs(Selected_circle_radius[i + 1] - Selected_circle_radius[i])
+                    farkList.append(fark)
+
+            for i in range(len(farkList)):
+                if (i+1) < len(farkList):
+                    fark1 = abs(np.int16(farkList[i + 1] - farkList[i]))
+                    farkList1.append(fark1)
+
+            print(farkList)
+            print(farkList1)
+
+            fark2 = abs(np.int16(farkList1[1] - farkList1[0]))
+            print("farks", fark2)
+            basaEkle = False
+            sonaEkle = False
+
+            #If fark2 is less than 20 then we add radius to the begining of the list or to the end of the list.
+            if fark2 < 20:
+                if abs(np.int16(farkList[1] - farkList[0])) > 10  and abs(np.int16(farkList[1] - farkList[2])) > 10:
+                    addNum = Selected_circle_radius[2] - farkList[0]
+                    Selected_circle_radius.insert(2, addNum)
+                else:
+                    for i in range(len(Selected_circle_radius)):
+                        if Selected_circle_radius[i] < 100:
+                            sonaEkle = True
+                            basaEkle = False
+                            break
+                        else:
+                            basaEkle = True
+                            sonaEkle = False
+
+                    if basaEkle == True:
+                        addNum = Selected_circle_radius[0] - farkList[0]
+                        Selected_circle_radius.insert(0, addNum)
+                    elif sonaEkle == True:
+                        addNum = Selected_circle_radius[3] + farkList[2]
+                        Selected_circle_radius.append(addNum)                  
+            elif fark2 > 20:
+                #Check which number is bigger in [0, 2]. Then check the numbers that cause this. Add the corresponding number to radius list.
+                if farkList1[1] > farkList1[0]:
+                    num1 = Selected_circle_radius[3] - Selected_circle_radius[2]
+                    num2 = Selected_circle_radius[2] - Selected_circle_radius[1]
+                    if num1 > num2:
+                        addNum = Selected_circle_radius[3] - farkList[2]
+                        Selected_circle_radius.insert(3, addNum)
+                    elif num2 > num1:
+                        addNum = Selected_circle_radius[2] - farkList[2]
+                        Selected_circle_radius.insert(2, addNum)
+                elif farkList1[0] > farkList1[1]:
+                    num1 = Selected_circle_radius[2] - Selected_circle_radius[1]
+                    num2 = Selected_circle_radius[1] - Selected_circle_radius[0]
+                    if num1 > num2:
+                        addNum = Selected_circle_radius[2] - farkList[1]
+                        Selected_circle_radius.insert(2, addNum)
+                    elif num2 > num1:
+                        addNum = Selected_circle_radius[1] - farkList[1]
+                        Selected_circle_radius.insert(1, addNum)                                                               
+
 
 def Is_TemplateMatching():
     global isTemplate, done
@@ -478,25 +566,33 @@ def cropImage():
         print("farkw", farkW)
         print("farkH", farkH)
 
-        plt.imshow(croptedImg,cmap = 'gray')
+        plt.imshow(croptedImg)
         plt.show()
     else:
+        if cropImg != "":
+            templateW, templateH = cropImg.shape
+            croptedImg = cropImg[rectY:(rectY+2*max_radius), rectX:(rectX+2*max_radius)]
+        else:
+            img = cv.imread(targetName,0)
+        
+            if img.shape[0] > 1000 and img.shape[1] > 1000:
+                template_width = int(img.shape[1] /2)
+                template_height = int(img.shape[0] /2)
+                dim = (template_width, template_height)
 
-        templateW, templateH = cropImg.shape
+                img = cv.resize(img, dim, interpolation = cv.INTER_AREA)
+                cv.imshow("Resized image", img)
+                cv.waitKey(0)
 
-        # orImageW, orImageH = img.shape
-        # farkXW = abs(orImageW -templateW)
-        # farkYH = abs(orImageH- templateH)
-        # rectX = rectX + farkYH
-        # rectY = rectY + farkXW
-
-        croptedImg = cropImg[rectY:(rectY+2*max_radius), rectX:(rectX+2*max_radius)]
+            templateW, templateH = img.shape
+            croptedImg = img[rectY:(rectY+2*max_radius), rectX:(rectX+2*max_radius)]
+        
         cropW, cropH = croptedImg.shape
 
         farkW = abs(templateW - cropW)
         farkH = abs(templateH - cropH)
 
-        plt.imshow(croptedImg,cmap = 'gray')
+        plt.imshow(croptedImg)
         plt.show()
 
 def ThresHolding():
@@ -506,17 +602,38 @@ def ThresHolding():
     plt.imshow(thresh1,cmap = 'gray')
     plt.show()
 
-def AdaptiveThreshold():
+def AdaptiveThreshold(num1):
     global thresh1
     thresh1 = cv.adaptiveThreshold(croptedImg,255,cv.ADAPTIVE_THRESH_GAUSSIAN_C,\
-                cv.THRESH_BINARY,11,8)
+                cv.THRESH_BINARY,11,num1)#8, 2
     plt.imshow(thresh1,cmap = 'gray')
     plt.show()
+
+def HistogramEqualization():
+    global thresh1
+    thresh1 = cv.equalizeHist(croptedImg)
+    cv.imshow("Histogram",thresh1)
+    cv.waitKey()
+
+def closing():
+    global thresh1
+    kernel = np.ones((5, 5), np.uint8)
+    thresh1 = cv.morphologyEx(thresh1, cv.MORPH_CLOSE, kernel)
+
+def opening():
+    global thresh1
+    kernel = np.ones((5, 5), np.uint8)
+    thresh1 = cv.morphologyEx(thresh1, cv.MORPH_OPEN, kernel)
 
 def erode():
     global thresh1
     kernel = np.ones((5, 5), np.uint8)
     thresh1 = cv.erode(thresh1, kernel, iterations=1)
+
+def dilation():
+    global thresh1
+    kernel = np.ones((5, 5), np.uint8)
+    thresh1 = cv.dilate(thresh1, kernel, iterations=1)
 
 def BlopDetection():
     #Blop Param
@@ -529,7 +646,7 @@ def BlopDetection():
     # Filter by Circularity
     params.filterByCircularity = True
     params.minCircularity = 0.1
-
+    
     # Filter by Convexity
     params.filterByConvexity = True
     params.minConvexity = 0.1
@@ -538,10 +655,13 @@ def BlopDetection():
     params.filterByInertia = True
     params.minInertiaRatio = 0.01
 
+    params.minThreshold = 10
+    params.maxThreshold = 200
+
     #Blop Detection
     detector = cv.SimpleBlobDetector_create(params)
-    keypoints = detector.detect(thresh1)
-    with_keypoints = cv.drawKeypoints(thresh1, keypoints, np.array([]), (0, 0, 255), cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    keypoints = detector.detect(croptedImg)
+    with_keypoints = cv.drawKeypoints(croptedImg, keypoints, np.array([]), (0, 0, 255), cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
     cv.imshow("KeyPoints", with_keypoints)
     cv.waitKey(0)
     plt.show()
@@ -579,8 +699,8 @@ def Get_Scores():
 
     for i in range(0, len(Scored_Points), 2):
 
-        point_radius_x = abs(min_center_points_x - (Scored_Points[i] + farkH-80))
-        point_radius_y = abs(min_center_points_y - (Scored_Points[i + 1] + farkW-80))
+        point_radius_x = abs(min_center_points_x - (Scored_Points[i] + farkH -50))
+        point_radius_y = abs(min_center_points_y - (Scored_Points[i + 1] + farkW -50))
 
         point_radius = math.sqrt(point_radius_x**2 + point_radius_y**2)
 
@@ -612,9 +732,10 @@ def Get_Scores():
             cv.waitKey(0)
             plt.show()
         else:
-            cv.putText(img = croptedImg, text="0", org=(Scored_Points[i], Scored_Points[i + 1]), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=1, color=(255, 0, 0),thickness=1)
-            cv.imshow("0 Score",croptedImg)
-            cv.waitKey(0)
-            plt.show()
+            continue
+            # cv.putText(img = croptedImg, text="0", org=(Scored_Points[i], Scored_Points[i + 1]), fontFace=cv.FONT_HERSHEY_TRIPLEX, fontScale=1, color=(255, 0, 0),thickness=1)
+            # cv.imshow("0 Score",croptedImg)
+            # cv.waitKey(0)
+            # plt.show()
 
 main()
